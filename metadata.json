@@ -1,0 +1,7 @@
+{
+  "name": "OptiView Virtual Try-On",
+  "description": "A virtual glasses try-on application allowing users to capture a photo and overlay various frames with drag-and-drop adjustments.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
