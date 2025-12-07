@@ -1,5 +1,5 @@
-import React from 'react';
-import { Camera, Upload, Sparkles, Glasses, ShieldCheck, CheckCircle, ArrowRight, User, ScanFace, MousePointerClick, Lock, FileText, Eye } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Camera, Upload, Sparkles, Glasses, ShieldCheck, CheckCircle, ArrowRight, User, ScanFace, MousePointerClick, Lock, FileText, Eye, Settings, Save, X } from 'lucide-react';
 
 interface LandingPageProps {
   onStartTryOn: () => void;
@@ -7,6 +7,24 @@ interface LandingPageProps {
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ onStartTryOn, onOpenCatalog }) => {
+  const [showSettings, setShowSettings] = useState(false);
+  const [apiKey, setApiKey] = useState('');
+
+  useEffect(() => {
+    const stored = localStorage.getItem('GEMINI_API_KEY');
+    if (stored) setApiKey(stored);
+  }, []);
+
+  const handleSaveKey = () => {
+    if (!apiKey.trim()) {
+        localStorage.removeItem('GEMINI_API_KEY');
+    } else {
+        localStorage.setItem('GEMINI_API_KEY', apiKey.trim());
+    }
+    setShowSettings(false);
+    alert('Clave API guardada. Ahora puedes probar la aplicación.');
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 overflow-x-hidden">
       {/* Navbar */}
@@ -19,6 +37,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStartTryOn, onOpenCatalog }
             <span className="text-xl font-bold tracking-tight text-slate-900">OptiView<span className="text-indigo-600">.AI</span></span>
           </div>
           <div className="flex gap-4 items-center">
+             <button 
+                onClick={() => setShowSettings(true)}
+                className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-full transition-colors"
+                title="Configuración API Key"
+             >
+                <Settings size={20} />
+             </button>
              <button 
                 onClick={onOpenCatalog}
                 className="hidden md:flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors px-4 py-2 hover:bg-slate-50 rounded-lg"
@@ -35,6 +60,53 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStartTryOn, onOpenCatalog }
           </div>
         </div>
       </nav>
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold flex items-center gap-2">
+                        <Settings className="w-5 h-5 text-indigo-600" />
+                        Configuración Manual
+                    </h3>
+                    <button onClick={() => setShowSettings(false)} className="text-slate-400 hover:text-slate-600">
+                        <X size={20} />
+                    </button>
+                </div>
+                <p className="text-sm text-slate-500 mb-4 leading-relaxed">
+                    Si la aplicación no detecta la API Key desde Vercel (Variables de Entorno), puedes pegarla aquí manualmente para que funcione en este navegador.
+                </p>
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Google Gemini API Key</label>
+                        <input 
+                            type="password" 
+                            className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                            placeholder="AIzaSy..."
+                            value={apiKey}
+                            onChange={(e) => setApiKey(e.target.value)}
+                        />
+                    </div>
+                    <button 
+                        onClick={handleSaveKey}
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2"
+                    >
+                        <Save size={18} />
+                        Guardar y Activar
+                    </button>
+                    <a 
+                        href="https://aistudio.google.com/app/apikey" 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="block text-center text-xs text-indigo-600 hover:underline mt-2"
+                    >
+                        Obtener API Key gratis aquí
+                    </a>
+                </div>
+            </div>
+        </div>
+      )}
 
       {/* Hero Section */}
       <header className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-6 overflow-hidden">

@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { DetectedFace } from '../types';
+import { getGeminiApiKey } from '../utils/apiKey';
 
 /**
  * Helper to resize image base64 to a manageable size for API (max 600px for speed/safety)
@@ -45,7 +46,13 @@ const resizeImageForApi = (base64Str: string): Promise<string> => {
  */
 export const detectEyesFromImage = async (base64Image: string): Promise<DetectedFace | null> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const apiKey = getGeminiApiKey();
+    if (!apiKey) {
+        console.warn("Face Detection Skipped: Missing API Key");
+        return null;
+    }
+    
+    const ai = new GoogleGenAI({ apiKey });
     
     // Resize image to prevent 400 Payload Invalid Argument errors
     const optimizedData = await resizeImageForApi(base64Image);

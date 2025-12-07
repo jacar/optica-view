@@ -6,6 +6,7 @@ import { useDraggableFrame } from '../hooks/useDraggableFrame';
 import FrameOverlay from './FrameOverlay';
 import FrameCarousel from './FrameCarousel';
 import { detectEyesFromImage, calculateAutoPosition } from '../services/faceDetectionService';
+import { getGeminiApiKey } from '../utils/apiKey';
 
 interface TryOnPageProps {
   userPhoto: string;
@@ -171,7 +172,9 @@ const TryOnPage: React.FC<TryOnPageProps> = ({ userPhoto: initialUserPhoto, fram
     setIsAnalyzing(true);
     setAnalysisResult(null);
     try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const apiKey = getGeminiApiKey();
+        if (!apiKey) throw new Error("MISSING_KEY");
+        const ai = new GoogleGenAI({ apiKey });
         const base64Data = userPhoto.includes('base64,') ? userPhoto.split('base64,')[1] : userPhoto;
         
         const response = await ai.models.generateContent({
@@ -184,9 +187,13 @@ const TryOnPage: React.FC<TryOnPageProps> = ({ userPhoto: initialUserPhoto, fram
             }
         });
         setAnalysisResult(response.text || "No se pudo analizar la imagen.");
-    } catch (e) {
+    } catch (e: any) {
         console.error(e);
-        setAnalysisResult("Falló el análisis. Intenta nuevamente.");
+        if (e.message === "MISSING_KEY") {
+             setAnalysisResult("Falta API Key. Usa el botón de configuración en el inicio.");
+        } else {
+             setAnalysisResult(`Error: ${e.message}`);
+        }
     } finally {
         setIsAnalyzing(false);
     }
@@ -242,6 +249,9 @@ const TryOnPage: React.FC<TryOnPageProps> = ({ userPhoto: initialUserPhoto, fram
     setIsGenerativeTryOn(true);
     
     try {
+        const apiKey = getGeminiApiKey();
+        if (!apiKey) throw new Error("MISSING_KEY");
+
         // 1. First ensure we have the best position (Nano Banana)
         let eyes = cachedEyes;
         if (!eyes) {
@@ -262,7 +272,7 @@ const TryOnPage: React.FC<TryOnPageProps> = ({ userPhoto: initialUserPhoto, fram
              eyeCenterY = (eyes.leftEye.y + eyes.rightEye.y) / 2;
         }
 
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const ai = new GoogleGenAI({ apiKey });
         const userBase64 = userPhoto.includes('base64,') ? userPhoto.split('base64,')[1] : userPhoto;
         
         // Fetch product image - CRITICAL STEP
@@ -332,9 +342,13 @@ const TryOnPage: React.FC<TryOnPageProps> = ({ userPhoto: initialUserPhoto, fram
             alert("La IA no devolvió una imagen válida. Intenta de nuevo.");
         }
 
-    } catch (e) {
+    } catch (e: any) {
         console.error(e);
-        alert("Ocurrió un error al conectar con la IA.");
+        if (e.message === "MISSING_KEY") {
+            alert("Error: Falta la API Key. Usa el botón de configuración en la pantalla de inicio.");
+        } else {
+            alert(`Error de conexión con Gemini: ${e.message}`);
+        }
     } finally {
         setIsGenerativeTryOn(false);
     }
@@ -344,7 +358,9 @@ const TryOnPage: React.FC<TryOnPageProps> = ({ userPhoto: initialUserPhoto, fram
       if (!editPrompt.trim()) return;
       setIsGeneratingEdit(true);
       try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const apiKey = getGeminiApiKey();
+        if (!apiKey) throw new Error("MISSING_KEY");
+        const ai = new GoogleGenAI({ apiKey });
         const base64Data = userPhoto.includes('base64,') ? userPhoto.split('base64,')[1] : userPhoto;
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
@@ -370,9 +386,13 @@ const TryOnPage: React.FC<TryOnPageProps> = ({ userPhoto: initialUserPhoto, fram
             setIsEditing(false);
             setEditPrompt('');
         }
-      } catch (e) {
+      } catch (e: any) {
           console.error(e);
-          alert("Falló la edición. Intenta de nuevo.");
+          if (e.message === "MISSING_KEY") {
+               alert("Falta API Key. Configúrala en el inicio.");
+          } else {
+               alert(`Error al editar: ${e.message}`);
+          }
       } finally {
           setIsGeneratingEdit(false);
       }

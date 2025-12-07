@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Sparkles, Loader2, Image as ImageIcon, Palette, Info } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
+import { getGeminiApiKey } from '../utils/apiKey';
 
 interface AIModelGeneratorProps {
   onImageGenerated: (dataUrl: string) => void;
@@ -44,7 +45,10 @@ const AIModelGenerator: React.FC<AIModelGeneratorProps> = ({ onImageGenerated, o
          }
       }
 
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const apiKey = getGeminiApiKey();
+      if (!apiKey) throw new Error("MISSING_KEY");
+
+      const ai = new GoogleGenAI({ apiKey });
       
       // Construct prompt with style
       const styleObj = AVATAR_STYLES.find(s => s.value === selectedStyle);
@@ -81,13 +85,16 @@ const AIModelGenerator: React.FC<AIModelGeneratorProps> = ({ onImageGenerated, o
       }
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "Error al generar imagen.");
-      // Handle race condition or cancellation by resetting/re-prompting if needed
-      if (err.message && err.message.includes("Requested entity was not found")) {
+      if (err.message === "MISSING_KEY") {
+          setError("Error: Falta la VITE_GOOGLE_API_KEY en las variables de entorno de Vercel.");
+      } else if (err.message && err.message.includes("Requested entity was not found")) {
+          setError("Error de autenticación. Intenta seleccionar la clave de nuevo.");
           const win = window as any;
           if (win.aistudio && win.aistudio.openSelectKey) {
               await win.aistudio.openSelectKey();
           }
+      } else {
+          setError(err.message || "Error al generar imagen.");
       }
     } finally {
       setLoading(false);
